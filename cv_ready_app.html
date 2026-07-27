@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CV Ready — Optimizador de CV con IA</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --ink:#12161F;
+    --ink-2:#1B212D;
+    --ink-3:#242C3A;
+    --paper:#F7F4EE;
+    --paper-2:#EFEAE0;
+    --scan:#3ED6B5;
+    --scan-dim:#2A9C86;
+    --amber:#E8A33D;
+    --coral:#E85D4D;
+    --text-soft:#8B93A3;
+    --text-ink:#1B2130;
+    --text-ink-soft:#6B7280;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    font-family:'Sora',sans-serif;
+    color:var(--text-ink);
+    min-height:100vh;
+  }
+  .app{
+    display:grid;
+    grid-template-columns: 1fr;
+    min-height:100vh;
+  }
+  @media (min-width:900px){
+    .app{grid-template-columns: 420px 1fr;}
+  }
+
+  /* ---------- LEFT PANEL (control) ---------- */
+  .control{
+    background:var(--ink);
+    padding:36px 32px 40px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+    border-right:1px solid var(--ink-3);
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand-dot{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--scan);
+    box-shadow:0 0 12px var(--scan);
+  }
+  .brand-name{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:19px;
+    letter-spacing:0.02em;
+    color:#fff;
+  }
+  .tagline{
+    color:var(--text-soft);
+    font-size:14px;
+    line-height:1.5;
+    margin:0;
+  }
+  label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--scan);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .optional-tag{
+    color:var(--text-soft);
+    text-transform:none;
+    letter-spacing:0;
+    font-size:11px;
+  }
+  textarea{
+    width:100%;
+    background:var(--ink-2);
+    border:1px solid var(--ink-3);
+    border-radius:10px;
+    color:#EDEFF4;
+    font-family:'Sora',sans-serif;
+    font-size:13.5px;
+    line-height:1.55;
+    padding:12px 14px;
+    resize:vertical;
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  textarea:focus{border-color:var(--scan);}
+  textarea::placeholder{color:#5A6272;}
+  #cvInput{min-height:210px;}
+  #jobInput{min-height:100px;}
+
+  .field{display:flex;flex-direction:column;gap:8px;}
+
+  .analyze-btn{
+    margin-top:6px;
+    background:var(--scan);
+    color:#0B1410;
+    border:none;
+    border-radius:10px;
+    padding:14px 18px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:14.5px;
+    letter-spacing:0.01em;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    transition:transform .12s ease, background .15s ease;
+  }
+  .analyze-btn:hover:not(:disabled){background:#57E9CB;transform:translateY(-1px);}
+  .analyze-btn:active:not(:disabled){transform:translateY(0);}
+  .analyze-btn:disabled{background:var(--ink-3);color:var(--text-soft);cursor:not-allowed;}
+
+  .privacy-note{
+    color:var(--text-soft);
+    font-size:11.5px;
+    line-height:1.5;
+    display:flex;
+    gap:8px;
+    align-items:flex-start;
+  }
+  .privacy-note svg{flex-shrink:0;margin-top:1px;}
+
+  input[type="password"], input[type="text"]{
+    width:100%;
+    background:var(--ink-2);
+    border:1px solid var(--ink-3);
+    border-radius:10px;
+    color:#EDEFF4;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    padding:12px 14px;
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  input[type="password"]:focus, input[type="text"]:focus{border-color:var(--scan);}
+  input::placeholder{color:#5A6272;}
+
+  .key-help{
+    font-size:11.5px;
+    color:var(--text-soft);
+    line-height:1.5;
+  }
+  .key-help a{color:var(--scan);text-decoration:none;}
+  .key-help a:hover{text-decoration:underline;}
+
+  .upload-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .upload-btn{
+    background:var(--ink-2);
+    border:1px dashed var(--ink-3);
+    border-radius:10px;
+    color:var(--text-soft);
+    font-family:'Sora',sans-serif;
+    font-size:12.5px;
+    font-weight:500;
+    padding:9px 14px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .upload-btn:hover{border-color:var(--scan);color:var(--scan);}
+  .upload-status{
+    font-size:11.5px;
+    color:var(--scan);
+    font-family:'JetBrains Mono',monospace;
+  }
+  .upload-status.error{color:var(--coral);}
+
+  .spinner{
+    width:14px;height:14px;
+    border:2px solid rgba(11,20,16,0.25);
+    border-top-color:#0B1410;
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---------- RIGHT PANEL (paper / results) ---------- */
+  .stage{
+    background:
+      radial-gradient(ellipse at top left, #1a2030 0%, var(--ink) 55%);
+    padding:40px 5vw 60px;
+    position:relative;
+    overflow:hidden;
+  }
+  .paper{
+    position:relative;
+    background:var(--paper);
+    border-radius:var(--radius);
+    min-height:520px;
+    max-width:760px;
+    margin:0 auto;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.55);
+    overflow:hidden;
+  }
+  .paper-inner{
+    padding:40px 44px 48px;
+  }
+
+  /* empty state */
+  .empty-state{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    min-height:520px;
+    padding:40px;
+    gap:14px;
+  }
+  .empty-state .icon{
+    width:56px;height:56px;
+    border:2px dashed #C9C2B0;
+    border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    color:#B7AF9A;
+  }
+  .empty-state h3{
+    font-family:'Space Grotesk',sans-serif;
+    color:var(--text-ink);
+    font-size:18px;
+    margin:4px 0 0;
+  }
+  .empty-state p{
+    color:var(--text-ink-soft);
+    font-size:14px;
+    max-width:320px;
+    margin:0;
+    line-height:1.5;
+  }
+
+  /* scanning state */
+  .scanning{
+    min-height:520px;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+  }
+  .scan-doc{
+    width:200px;height:260px;
+    background:#fff;
+    border-radius:6px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.12);
+    position:relative;
+    overflow:hidden;
+    border:1px solid var(--paper-2);
+  }
+  .scan-doc .line{
+    height:8px;border-radius:3px;
+    background:#E4E0D5;
+    margin:16px 18px;
+  }
+  .scan-beam{
+    position:absolute;
+    left:0;right:0;height:38px;
+    top:-38px;
+    background:linear-gradient(180deg, rgba(62,214,181,0) 0%, rgba(62,214,181,0.55) 50%, rgba(62,214,181,0) 100%);
+    animation:sweep 1.7s ease-in-out infinite;
+  }
+  @keyframes sweep{
+    0%{top:-38px;}
+    50%{top:260px;}
+    100%{top:-38px;}
+  }
+  .scanning p{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.04em;
+    color:var(--text-ink-soft);
+  }
+
+  /* results */
+  .results{display:none;flex-direction:column;gap:32px;}
+  .results.visible{display:flex;}
+
+  .score-row{
+    display:flex;
+    align-items:center;
+    gap:24px;
+    padding-bottom:24px;
+    border-bottom:1px solid var(--paper-2);
+  }
+  .score-ring{
+    width:96px;height:96px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+    flex-shrink:0;
+  }
+  .score-ring .num{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:26px;
+  }
+  .score-ring .inner{
+    position:absolute;
+    inset:8px;
+    background:var(--paper);
+    border-radius:50%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .score-ring .unit{font-size:10px;color:var(--text-ink-soft);font-family:'JetBrains Mono',monospace;}
+  .score-copy h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:17px;
+    margin:0 0 6px;
+  }
+  .score-copy p{
+    margin:0;
+    font-size:13.5px;
+    color:var(--text-ink-soft);
+    line-height:1.5;
+  }
+
+  .section-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.07em;
+    text-transform:uppercase;
+    color:var(--text-ink-soft);
+    margin:0 0 12px;
+  }
+
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    padding:6px 12px;
+    border-radius:100px;
+  }
+  .chip.gap{background:#FBE9E5;color:#B8483A;}
+  .chip.strength{background:#E4F5EF;color:#1E8A6E;}
+
+  .suggestion{
+    background:#fff;
+    border:1px solid var(--paper-2);
+    border-radius:10px;
+    padding:16px 18px;
+    margin-bottom:12px;
+  }
+  .suggestion .tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--scan-dim);
+    margin-bottom:8px;
+    display:block;
+  }
+  .suggestion .original{
+    font-size:13px;
+    color:#A6A093;
+    text-decoration:line-through;
+    margin:0 0 6px;
+    line-height:1.5;
+  }
+  .suggestion .mejora{
+    font-size:13.5px;
+    color:var(--text-ink);
+    margin:0;
+    line-height:1.5;
+    font-weight:500;
+  }
+
+  .actions-row{
+    display:flex;
+    gap:10px;
+    padding-top:8px;
+  }
+  .copy-btn{
+    background:var(--ink);
+    color:#EDEFF4;
+    border:none;
+    border-radius:8px;
+    padding:10px 16px;
+    font-family:'Sora',sans-serif;
+    font-size:13px;
+    font-weight:500;
+    cursor:pointer;
+  }
+  .copy-btn:hover{background:var(--ink-2);}
+
+  .error-box{
+    background:#FBE9E5;
+    color:#B8483A;
+    border-radius:10px;
+    padding:16px 18px;
+    font-size:13.5px;
+    line-height:1.5;
+  }
+
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--ink-3);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- LEFT: control panel -->
+  <div class="control">
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <div class="brand-name">CV READY</div>
+    </div>
+    <p class="tagline">Subí tu CV o pegá el texto, y (opcionalmente) la descripción del puesto. La IA lo analiza como lo haría un filtro ATS real, y te devuelve mejoras concretas.</p>
+
+    <div class="field">
+      <label for="apiKeyInput">Tu Google Gemini API Key</label>
+      <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
+      <p class="key-help">Es gratis y no pide tarjeta. Se usa solo en tu navegador — nunca se guarda ni se envía a ningún servidor propio. Conseguí la tuya en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> (con tu cuenta de Google).</p>
+    </div>
+
+    <div class="field">
+      <label for="cvInput">Texto de tu CV</label>
+      <div class="upload-row">
+        <label class="upload-btn" for="fileInput">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Adjuntar CV (PDF o TXT)
+        </label>
+        <input type="file" id="fileInput" accept=".pdf,.txt" style="display:none;" onchange="cargarArchivo(event)">
+        <span class="upload-status" id="uploadStatus"></span>
+      </div>
+      <textarea id="cvInput" placeholder="...o pegá acá el texto completo de tu CV"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="jobInput">Descripción del puesto <span class="optional-tag">(opcional)</span></label>
+      <textarea id="jobInput" placeholder="Pegá la descripción de la vacante para un análisis más preciso..."></textarea>
+    </div>
+
+    <button class="analyze-btn" id="analyzeBtn" onclick="analizarCV()">
+      <span id="btnLabel">Analizar con IA</span>
+    </button>
+
+    <div class="privacy-note">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span>Tu CV se procesa solo en esta sesión del navegador. No se guarda ni se comparte con nadie.</span>
+    </div>
+  </div>
+
+  <!-- RIGHT: paper / results -->
+  <div class="stage">
+    <div class="paper">
+
+      <div class="empty-state" id="emptyState">
+        <div class="icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        </div>
+        <h3>Todavía no hay nada para mostrar</h3>
+        <p>Pegá tu CV en el panel de la izquierda y presioná "Analizar con IA" para empezar el escaneo.</p>
+      </div>
+
+      <div class="scanning" id="scanningState" style="display:none;">
+        <div class="scan-doc">
+          <div class="scan-beam"></div>
+          <div class="line" style="width:60%;margin-top:24px;"></div>
+          <div class="line" style="width:80%;"></div>
+          <div class="line" style="width:40%;"></div>
+          <div class="line" style="width:70%;margin-top:20px;"></div>
+          <div class="line" style="width:55%;"></div>
+          <div class="line" style="width:65%;"></div>
+        </div>
+        <p>ESCANEANDO CONTRA FILTROS ATS...</p>
+      </div>
+
+      <div class="paper-inner" id="errorWrap" style="display:none;">
+        <div class="error-box" id="errorBox"></div>
+      </div>
+
+      <div class="paper-inner results" id="results">
+        <div class="score-row">
+          <div class="score-ring" id="scoreRing">
+            <div class="inner">
+              <div class="num" id="scoreNum">–</div>
+              <div class="unit">/ 100</div>
+            </div>
+          </div>
+          <div class="score-copy">
+            <h2>Compatibilidad ATS estimada</h2>
+            <p id="resumenEjecutivo"></p>
+          </div>
+        </div>
+
+        <div>
+          <p class="section-label">Palabras clave faltantes</p>
+          <div class="chip-row" id="keywordsFaltantes"></div>
+        </div>
+
+        <div>
+          <p class="section-label">Fortalezas detectadas</p>
+          <div class="chip-row" id="fortalezas"></div>
+        </div>
+
+        <div>
+          <p class="section-label">Sugerencias de reescritura</p>
+          <div id="sugerencias"></div>
+        </div>
+
+        <div class="actions-row">
+          <button class="copy-btn" onclick="copiarReporte()">Copiar reporte completo</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+let ultimoResultado = null;
+
+async function extraerTextoPDF(archivo){
+  const arrayBuffer = await archivo.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let textoCompleto = "";
+  for(let i = 1; i <= pdf.numPages; i++){
+    const pagina = await pdf.getPage(i);
+    const contenido = await pagina.getTextContent();
+    const strings = contenido.items.map(item => item.str);
+    textoCompleto += strings.join(" ") + "\n";
+  }
+  return textoCompleto;
+}
+
+async function cargarArchivo(event){
+  const archivo = event.target.files[0];
+  if(!archivo) return;
+
+  const status = document.getElementById('uploadStatus');
+  status.classList.remove('error');
+  status.textContent = 'Leyendo archivo...';
+
+  try{
+    let texto = "";
+    if(archivo.type === "application/pdf" || archivo.name.toLowerCase().endsWith(".pdf")){
+      texto = await extraerTextoPDF(archivo);
+    }else{
+      texto = await archivo.text();
+    }
+
+    if(!texto.trim()){
+      throw new Error("El archivo parece estar vacío o es una imagen escaneada sin texto seleccionable.");
+    }
+
+    document.getElementById('cvInput').value = texto.trim();
+    document.getElementById('cvInput').style.borderColor = '';
+    status.textContent = `✓ ${archivo.name} cargado (${texto.trim().split(/\s+/).length} palabras)`;
+  }catch(err){
+    status.classList.add('error');
+    status.textContent = 'No se pudo leer el archivo: ' + err.message;
+  }
+}
+
+function showState(state){
+  document.getElementById('emptyState').style.display = state==='empty' ? 'flex' : 'none';
+  document.getElementById('scanningState').style.display = state==='scanning' ? 'flex' : 'none';
+  document.getElementById('errorWrap').style.display = state==='error' ? 'block' : 'none';
+  document.getElementById('results').classList.toggle('visible', state==='results');
+}
+
+function scoreColor(score){
+  if(score >= 75) return {ring:'#3ED6B5', text:'#1E8A6E'};
+  if(score >= 50) return {ring:'#E8A33D', text:'#B4791F'};
+  return {ring:'#E85D4D', text:'#B8483A'};
+}
+
+async function analizarCV(){
+  const cv = document.getElementById('cvInput').value.trim();
+  const job = document.getElementById('jobInput').value.trim();
+  const apiKey = document.getElementById('apiKeyInput').value.trim();
+  const btn = document.getElementById('analyzeBtn');
+  const btnLabel = document.getElementById('btnLabel');
+
+  document.getElementById('apiKeyInput').style.borderColor = '';
+  document.getElementById('cvInput').style.borderColor = '';
+
+  if(!apiKey){
+    document.getElementById('apiKeyInput').style.borderColor = '#E85D4D';
+    return;
+  }
+  if(!cv){
+    document.getElementById('cvInput').style.borderColor = '#E85D4D';
+    return;
+  }
+
+  btn.disabled = true;
+  btnLabel.innerHTML = '<span class="spinner"></span> Analizando...';
+  showState('scanning');
+
+  const prompt = `Sos un experto en reclutamiento y sistemas ATS (Applicant Tracking Systems). Analizá el siguiente CV y, si se proporciona, la descripción del puesto al que se postula.
+
+Devolvé SOLO un objeto JSON válido, sin texto adicional antes ni después, sin backticks de markdown, con esta estructura EXACTA:
+
+{
+  "score_ats": <numero entre 0 y 100>,
+  "resumen_ejecutivo": "<2-3 lineas resumiendo el diagnostico general>",
+  "keywords_faltantes": ["<hasta 8 palabras clave relevantes que faltan en el CV>"],
+  "fortalezas": ["<hasta 4 fortalezas concretas detectadas en el CV>"],
+  "sugerencias": [
+    {"seccion": "<nombre de la seccion, ej Experiencia>", "original": "<fragmento original breve del CV>", "mejora": "<version reescrita, con verbos de accion y metricas cuando sea posible>"}
+  ]
+}
+
+Incluí como maximo 5 sugerencias, las mas impactantes. Sé específico y concreto, evitá generalidades.
+
+CV a analizar:
+"""
+${cv}
+"""
+
+Descripcion del puesto: ${job ? '"""\n' + job + '\n"""' : "No se proporciono una vacante especifica. Analiza contra buenas practicas generales de ATS para roles de tecnologia/datos."}`;
+
+  try{
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          maxOutputTokens: 3000,
+          thinkingConfig: { thinkingLevel: "low" }
+        }
+      })
+    });
+
+    if(!response.ok){
+      const errData = await response.json().catch(()=>null);
+      const msg = errData?.error?.message || `Error HTTP ${response.status}`;
+      throw new Error(msg);
+    }
+
+    const data = await response.json();
+    console.log("Respuesta cruda de Gemini:", data);
+
+    if(data.promptFeedback?.blockReason){
+      throw new Error("La solicitud fue bloqueada por el filtro de seguridad de Gemini (motivo: " + data.promptFeedback.blockReason + "). Probá reformular o acortar el texto del CV.");
+    }
+
+    const candidato = data.candidates?.[0];
+    if(!candidato){
+      throw new Error("Gemini no devolvió ningún resultado. Respuesta completa: " + JSON.stringify(data).slice(0, 300));
+    }
+    if(candidato.finishReason && candidato.finishReason !== "STOP"){
+      throw new Error("La respuesta se cortó por: " + candidato.finishReason + ". Probá con un CV más corto o subí el límite de maxOutputTokens.");
+    }
+
+    const textBlocks = candidato.content?.parts?.map(p => p.text).join("\n") || "";
+    if(!textBlocks.trim()){
+      throw new Error("Gemini devolvió una respuesta vacía. Intentá de nuevo en unos segundos.");
+    }
+    const clean = textBlocks.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(clean);
+
+    renderResultado(parsed);
+    ultimoResultado = parsed;
+    showState('results');
+
+  }catch(err){
+    document.getElementById('errorBox').textContent = "No se pudo completar el analisis. Verifica el texto ingresado e intenta nuevamente. (" + err.message + ")";
+    showState('error');
+  }finally{
+    btn.disabled = false;
+    btnLabel.textContent = 'Analizar con IA';
+  }
+}
+
+function renderResultado(r){
+  const colors = scoreColor(r.score_ats);
+  document.getElementById('scoreNum').textContent = r.score_ats;
+  document.getElementById('scoreNum').style.color = colors.text;
+  document.getElementById('scoreRing').style.background =
+    `conic-gradient(${colors.ring} ${r.score_ats * 3.6}deg, #EFEAE0 0deg)`;
+  document.getElementById('resumenEjecutivo').textContent = r.resumen_ejecutivo;
+
+  const kwWrap = document.getElementById('keywordsFaltantes');
+  kwWrap.innerHTML = (r.keywords_faltantes||[]).map(k => `<span class="chip gap">${k}</span>`).join('') || '<span class="chip strength">Sin gaps relevantes detectados</span>';
+
+  const stWrap = document.getElementById('fortalezas');
+  stWrap.innerHTML = (r.fortalezas||[]).map(s => `<span class="chip strength">${s}</span>`).join('');
+
+  const sugWrap = document.getElementById('sugerencias');
+  sugWrap.innerHTML = (r.sugerencias||[]).map(s => `
+    <div class="suggestion">
+      <span class="tag">${s.seccion}</span>
+      <p class="original">${s.original}</p>
+      <p class="mejora">→ ${s.mejora}</p>
+    </div>
+  `).join('');
+}
+
+function copiarReporte(){
+  if(!ultimoResultado) return;
+  const r = ultimoResultado;
+  let texto = `CV READY — REPORTE DE ANALISIS ATS\n\n`;
+  texto += `Score ATS: ${r.score_ats}/100\n\n`;
+  texto += `Resumen: ${r.resumen_ejecutivo}\n\n`;
+  texto += `Palabras clave faltantes: ${(r.keywords_faltantes||[]).join(', ')}\n\n`;
+  texto += `Fortalezas: ${(r.fortalezas||[]).join(', ')}\n\n`;
+  texto += `Sugerencias de reescritura:\n`;
+  (r.sugerencias||[]).forEach(s => {
+    texto += `\n[${s.seccion}]\nAntes: ${s.original}\nDespues: ${s.mejora}\n`;
+  });
+
+  navigator.clipboard.writeText(texto).then(()=>{
+    const btn = event.target;
+    const original = btn.textContent;
+    btn.textContent = '✓ Copiado';
+    setTimeout(()=>{ btn.textContent = original; }, 1800);
+  });
+}
+</script>
+
+</body>
+</html>
