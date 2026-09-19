@@ -3,16 +3,21 @@
 # ============================================
 #
 # Este archivo no contiene la lógica del sistema: su responsabilidad
-# es orquestar las piezas. Importa los datos y las funciones desde
-# el paquete 'blog' y coordina el flujo del menú.
+# es orquestar las piezas. Carga los posts desde el JSON, instancia
+# la clase Blog, y coordina el flujo del menú llamando a los métodos
+# de esa instancia.
 
-from blog.datos import posts
-from blog.menu import mostrar_menu
-from blog.operaciones import listar_posts, buscar_por_titulo, filtrar_por_tag
-from blog.validaciones import validar_todos_los_posts
+from blog.datos import cargar_posts, guardar_posts
+from blog.modelos import Autor, Post, Blog, ESTADOS_POST
+from blog.menu import mostrar_menu, pedir_datos_nuevo_post
 
 
 def main():
+    # Al iniciar el programa, leemos los posts existentes desde
+    # posts.json y armamos la instancia de Blog con esos datos.
+    posts = cargar_posts()
+    blog = Blog(posts)
+
     activo = True
 
     while activo:
@@ -24,18 +29,45 @@ def main():
             continue
 
         if opcion == 1:
-            listar_posts(posts)
+            blog.listar_posts()
+
         elif opcion == 2:
             termino = input("Ingresá el título (o parte) a buscar: ")
-            buscar_por_titulo(posts, termino)
+            blog.buscar_por_titulo(termino)
+
         elif opcion == 3:
             tag = input("Ingresá el tag a filtrar: ")
-            filtrar_por_tag(posts, tag)
+            blog.filtrar_por_tag(tag)
+
         elif opcion == 4:
-            validar_todos_los_posts(posts)
+            blog.validar_posts()
+
         elif opcion == 5:
+            datos_ingresados = pedir_datos_nuevo_post(ESTADOS_POST)
+
+            nuevo_autor = Autor(
+                nombre=datos_ingresados["nombre_autor"],
+                bio=datos_ingresados["bio_autor"],
+            )
+            nuevo_post = Post(
+                id=blog.siguiente_id(),
+                titulo=datos_ingresados["titulo"],
+                contenido=datos_ingresados["contenido"],
+                autor=nuevo_autor,
+                tags=datos_ingresados["tags"],
+                estado=datos_ingresados["estado"],
+            )
+
+            blog.agregar_post(nuevo_post)
+            # Convertimos toda la lista (incluido el post nuevo) a
+            # diccionarios y la guardamos en posts.json.
+            guardar_posts(blog.posts)
+            print(f"Post '{nuevo_post.titulo}' agregado y guardado en posts.json.")
+
+        elif opcion == 6:
             print("¡Gracias por usar el sistema de blog! Hasta luego.")
             activo = False
+
         else:
             print("Opción inválida, intenta de nuevo")
 

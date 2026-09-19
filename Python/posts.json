@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "titulo": "Introducción a Python",
+    "contenido": "Python es un lenguaje versátil y fácil de aprender.",
+    "autor": {
+      "nombre": "Mateo Di Benedetto",
+      "bio": "Analista de datos y programador"
+    },
+    "tags": [
+      "python",
+      "datos"
+    ],
+    "estado": "publicado"
+  },
+  {
+    "id": 2,
+    "titulo": "Modelos en Django",
+    "contenido": "Los modelos representan las tablas de la base de datos.",
+    "autor": {
+      "nombre": "Lucía Fernández",
+      "bio": "Redactora de contenido técnico"
+    },
+    "tags": [
+      "django",
+      "python"
+    ],
+    "estado": "publicado"
+  },
+  {
+    "id": 3,
+    "titulo": "Consultas SQL básicas",
+    "contenido": "SELECT, WHERE y JOIN son la base para consultar datos.",
+    "autor": {
+      "nombre": "Mateo Di Benedetto",
+      "bio": "Analista de datos y programador"
+    },
+    "tags": [
+      "sql",
+      "datos"
+    ],
+    "estado": "borrador"
+  },
+  {
+    "id": 4,
+    "titulo": "",
+    "contenido": "Contenido de prueba con datos incorrectos.",
+    "autor": "Autor Desconocido",
+    "tags": "powerbi",
+    "estado": "eliminado"
+  }
+]
