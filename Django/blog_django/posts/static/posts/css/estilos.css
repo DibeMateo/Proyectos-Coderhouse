@@ -1,0 +1,48 @@
+/* ---------- Reset básico ---------- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background-color: #f4f4f4;
+    color: #222;
+    line-height: 1.6;
+}
+
+/* ---------- Barra de navegación ---------- */
+.navbar {
+    background-color: #1f2937;
+    padding: 1rem 2rem;
+    display: flex;
+    gap: 1.5rem;
+}
+
+.navbar a {
+    color: #f4f4f4;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.navbar a:hover {
+    color: #60a5fa;
+}
+
+/* ---------- Contenido principal ---------- */
+.contenido {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+}
+
+.contenido h1 {
+    color: #1f2937;
+    margin-bottom: 1rem;
+}
+
+.contenido p {
+    color: #444;
+}
