@@ -83,3 +83,27 @@ Los estilos viven en `posts/static/posts/css/estilos.css`, y se cargan
 en `base.html` con `{% load static %}` y `{% static 'posts/css/estilos.css' %}`.
 
 ## Estructura del proyecto
+
+## Base de datos y panel de administración
+
+El proyecto usa SQLite (archivo `db.sqlite3`, que no se sube al repositorio). Después de clonar e instalar las dependencias, hay que crear la base de datos local:
+
+    python manage.py migrate
+
+El modelo `Post` (`posts/models.py`) tiene los campos `titulo`, `contenido`, `autor`, `fecha_creacion` y `estado` (borrador, publicado o archivado).
+
+### Cómo entrar al panel de administración
+
+Primero, crear un superusuario (el comando pide nombre de usuario, email y contraseña):
+
+    python manage.py createsuperuser
+
+Después, levantar el servidor:
+
+    python manage.py runserver
+
+Y entrar a http://127.0.0.1:8000/admin/ con el usuario y la contraseña elegidos. Desde la sección "Posts" se pueden crear, editar y borrar publicaciones.
+
+### Listado de publicaciones
+
+La página http://127.0.0.1:8000/posts/ muestra dinámicamente los posts con estado "publicado", del más reciente al más antiguo. Los posts en borrador o archivados no aparecen.
