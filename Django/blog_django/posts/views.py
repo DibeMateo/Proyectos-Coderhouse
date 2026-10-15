@@ -1,5 +1,6 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 
+from .forms import PostForm
 from .models import Post
 
 
@@ -12,7 +13,51 @@ def acerca(request):
 
 
 def lista_posts(request):
-    # Solo los posts publicados, del más nuevo al más viejo
     posts = Post.objects.filter(estado="publicado").order_by("-fecha_creacion")
-    context = {'posts': posts}
-    return render(request, 'posts/lista_posts.html', context)
+    return render(request, 'posts/lista_posts.html', {'posts': posts})
+
+
+def detalle_post(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    return render(request, 'posts/detalle_post.html', {'post': post})
+
+
+def crear_post(request):
+    if request.method == 'POST':
+        # request.FILES es lo que lleva la imagen subida
+        form = PostForm(request.POST, request.FILES)
+        if form.is_valid():
+            post = form.save()
+            return redirect('detalle_post', pk=post.pk)
+    else:
+        form = PostForm()
+    return render(request, 'posts/post_form.html', {
+        'form': form,
+        'titulo_pagina': 'Nuevo post',
+        'texto_boton': 'Crear',
+    })
+
+
+def editar_post(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    if request.method == 'POST':
+        form = PostForm(request.POST, request.FILES, instance=post)
+        if form.is_valid():
+            form.save()
+            return redirect('detalle_post', pk=post.pk)
+    else:
+        form = PostForm(instance=post)
+    return render(request, 'posts/post_form.html', {
+        'form': form,
+        'post': post,
+        'titulo_pagina': 'Editar post',
+        'texto_boton': 'Guardar cambios',
+    })
+
+
+def eliminar_post(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    if request.method == 'POST':
+        post.delete()
+        return redirect('lista_posts')
+    return render(request, 'posts/post_confirm_delete.html', {'post': post})

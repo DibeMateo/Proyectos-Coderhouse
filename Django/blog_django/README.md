@@ -107,3 +107,23 @@ Y entrar a http://127.0.0.1:8000/admin/ con el usuario y la contraseña elegidos
 ### Listado de publicaciones
 
 La página http://127.0.0.1:8000/posts/ muestra dinámicamente los posts con estado "publicado", del más reciente al más antiguo. Los posts en borrador o archivados no aparecen.
+
+## CRUD de publicaciones con imágenes
+
+| Ruta | Vista | Descripción |
+|---|---|---|
+| `/posts/` | `lista_posts` | Lista de publicaciones (solo las "Publicado") |
+| `/posts/nuevo/` | `crear_post` | Formulario para crear |
+| `/posts/<id>/` | `detalle_post` | Detalle de una publicación |
+| `/posts/<id>/editar/` | `editar_post` | Formulario para editar |
+| `/posts/<id>/eliminar/` | `eliminar_post` | Confirmación y borrado (solo por POST) |
+
+### Manejo de imágenes
+
+- El modelo `Post` tiene un campo `imagen = ImageField(upload_to='posts/', null=True, blank=True)`. Es opcional.
+- `ImageField` requiere **Pillow** (`pip install Pillow`, ya incluido en `requirements.txt`).
+- En `settings.py` se definen `MEDIA_URL = '/media/'` y `MEDIA_ROOT = BASE_DIR / 'media'`.
+- En `blog_project/urls.py` se usa `static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)` solo cuando `DEBUG = True` (desarrollo).
+- Para subir archivos, el `<form>` necesita `method="post"` y `enctype="multipart/form-data"`, y la vista tiene que pasar `request.FILES` al formulario: `PostForm(request.POST, request.FILES)`.
+- Las imágenes se guardan en `media/posts/` y en la base solo se guarda la ruta. En los templates se muestran con `{{ post.imagen.url }}`.
+- Para que un post nuevo aparezca en la lista, su estado debe ser "Publicado".
