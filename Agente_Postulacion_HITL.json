@@ -1,0 +1,573 @@
+{
+  "name": "Agente_Postulacion_HITL",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        -32
+      ],
+      "id": "604e583c-1045-4583-bd66-89bcb7d597ae",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "3f15661d-b3e5-80d6-a14f-000b9f35d77c",
+          "mode": "list",
+          "cachedResultName": "Work Application Tracker",
+          "cachedResultUrl": "https://app.notion.com/p/3f15661db3e580b9beb7ce9a8a47e4a5"
+        },
+        "limit": 1,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Status|status",
+              "condition": "equals",
+              "optionValue": "Quiero postular"
+            }
+          ]
+        },
+        "simple": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        224,
+        -32
+      ],
+      "id": "afc12cf4-2e07-439f-9605-42700aa3ec75",
+      "name": "Get many database pages",
+      "alwaysOutputData": true,
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "5M4Cn04IvQNHiYAz",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "65ca22d3-6842-4e93-8b04-e5401cfb6da6",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        -32
+      ],
+      "id": "d8187028-ccf2-4943-8217-18535bc92f1c",
+      "name": "Hay oferta?"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const d = item.json;\n  const p = d.properties ?? {};\n\n  const titulo = p['Task name']?.title?.[0]?.plain_text ?? d['Task name'] ?? 'el puesto';\n  const url = p['Job URL']?.url ?? d['Job URL'] ?? '';\n\n  const carta = `Estimado equipo de reclutamiento:\n\nLes escribo para postularme al puesto de ${titulo}. Soy Analista de Datos y Técnico en Programación, con experiencia en Python, SQL, Power BI, Excel y Tableau, y certificaciones IBM en Data Science y Data Analytics. Me interesa aportar análisis y visualización de datos a su equipo.\n\nVi la oferta en: ${url}\n\nQuedo a disposición para una entrevista.\n\nSaludos,\nMateo Di Benedetto`;\n\n  return { json: { id: d.id, titulo, url, carta } };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -32
+      ],
+      "id": "8dda5f00-a99d-41e2-9955-7db335267821",
+      "name": "Code: armar carta",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "sendTo": "REEMPLAZAR_TU_CORREO@ejemplo.com",
+        "subject": "=Revisar postulación: {{ $('Code: armar carta').item.json.titulo }}",
+        "message": "={{ $('Code: armar carta').item.json.carta }}\n\n---\nPara aprobar esta postulación, tildá la casilla Aprobado en Notion.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1072,
+        -32
+      ],
+      "id": "087ca7ee-4477-491c-b5b0-0333bea755de",
+      "name": "Gmail: pedir aprobación",
+      "webhookId": "5ce6b5f7-dd7c-45bb-ac36-d8143e8532b5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "4ifKuLEQanVJfmnK",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -16,
+        224
+      ],
+      "id": "f9dceffb-6e48-4a58-bf15-0aff2ad591f9",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "657a40e0-0d49-4a59-8b4f-5e8530027d5d",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        432,
+        224
+      ],
+      "id": "189ec47f-2e76-48e3-a3ef-aabb1181d5ff",
+      "name": "Hay aprobadas?"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "3f15661d-b3e5-80d6-a14f-000b9f35d77c",
+          "mode": "list",
+          "cachedResultName": "Work Application Tracker",
+          "cachedResultUrl": "https://app.notion.com/p/3f15661db3e580b9beb7ce9a8a47e4a5"
+        },
+        "limit": 1,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Status|status",
+              "condition": "equals",
+              "optionValue": "Esperando aprobación"
+            },
+            {
+              "key": "Aprobado|checkbox",
+              "condition": "equals",
+              "checkboxValue": true
+            }
+          ]
+        },
+        "simple": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        208,
+        224
+      ],
+      "id": "f530ae43-539c-4055-a36b-e7eb01308735",
+      "name": "Notion: buscar aprobadas",
+      "alwaysOutputData": true,
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "5M4Cn04IvQNHiYAz",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const d = item.json;\n  const p = d.properties ?? {};\n\n  const titulo = p['Task name']?.title?.[0]?.plain_text ?? d['Task name'] ?? 'el puesto';\n  const carta = (p['Carta generada']?.rich_text ?? []).map(t => t.plain_text).join('')\n    || (d['Carta generada'] ?? '');\n\n  return { json: { id: d.id, titulo, carta } };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        208
+      ],
+      "id": "baffc934-0b3e-4cd3-9b18-41363ec813db",
+      "name": "Code: preparar postulación"
+    },
+    {
+      "parameters": {
+        "sendTo": "REEMPLAZAR_TU_CORREO@ejemplo.com",
+        "subject": "=Postulación: {{ $json.titulo }}",
+        "message": "={{ $json.carta }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        208
+      ],
+      "id": "31364d53-b87e-4438-af27-8d41afdadd64",
+      "name": "Gmail: enviar postulación (simulada)",
+      "webhookId": "7ab4e270-3414-4342-b0b8-9de5e43b27cf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "4ifKuLEQanVJfmnK",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Code: preparar postulación').item.json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Status|status",
+              "statusValue": "Postulación enviada"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        1136,
+        144
+      ],
+      "id": "1e967602-faf7-4d0e-9182-cfb2716b93de",
+      "name": "Notion: marcar postulación enviada",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "5M4Cn04IvQNHiYAz",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Code: preparar postulación').item.json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Status|status",
+              "statusValue": "Rechazado"
+            },
+            {
+              "key": "Error|rich_text",
+              "textContent": "={{ $json.error.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        1136,
+        352
+      ],
+      "id": "35e4de56-c4ad-49dc-894e-10535caf9552",
+      "name": "Notion: registrar error del mail",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "5M4Cn04IvQNHiYAz",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Code: armar carta').item.json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Status|status",
+              "statusValue": "Esperando aprobación"
+            },
+            {
+              "key": "Carta generada|rich_text",
+              "textContent": "={{ $('Code: armar carta').item.json.carta }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        864,
+        -32
+      ],
+      "id": "1a4cc326-e877-4fc3-b54d-38cd424a48a8",
+      "name": "Notion: esperando aprobación",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "5M4Cn04IvQNHiYAz",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Code: armar carta').item.json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Status|status",
+              "statusValue": "Rechazado"
+            },
+            {
+              "key": "Error|rich_text",
+              "textContent": "={{ $json.error.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        1328,
+        -16
+      ],
+      "id": "65e0eafe-37bc-40b9-a7d6-77e323cace77",
+      "name": "Notion: registrar error mail",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "5M4Cn04IvQNHiYAz",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many database pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many database pages": {
+      "main": [
+        [
+          {
+            "node": "Hay oferta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay oferta?": {
+      "main": [
+        [
+          {
+            "node": "Code: armar carta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: armar carta": {
+      "main": [
+        [
+          {
+            "node": "Notion: esperando aprobación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail: pedir aprobación": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Notion: registrar error mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Notion: buscar aprobadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: buscar aprobadas": {
+      "main": [
+        [
+          {
+            "node": "Hay aprobadas?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay aprobadas?": {
+      "main": [
+        [
+          {
+            "node": "Code: preparar postulación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: preparar postulación": {
+      "main": [
+        [
+          {
+            "node": "Gmail: enviar postulación (simulada)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail: enviar postulación (simulada)": {
+      "main": [
+        [
+          {
+            "node": "Notion: marcar postulación enviada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notion: registrar error del mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: esperando aprobación": {
+      "main": [
+        [
+          {
+            "node": "Gmail: pedir aprobación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b2b73995-8a1d-449f-b803-5390b788b4ee",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a6c886bc47a99f0c756260ff0f156ca713506fb8f403365077dd2745cfc80e73"
+  },
+  "nodeGroups": [],
+  "id": "haOUM3yiq3aqQpTz",
+  "tags": []
+}

@@ -1,0 +1,798 @@
+{
+  "name": "Agente_Busqueda_Laboral_Diaria",
+  "nodes": [
+    {
+      "parameters": {
+        "fieldToSplitOut": "jobs",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        288,
+        -48
+      ],
+      "id": "ab16248f-2faf-4f71-b50f-a5f1160e5b3b",
+      "name": "Separar ofertar individuales"
+    },
+    {
+      "parameters": {
+        "url": "https://remotive.com/api/remote-jobs?category=data&search=data%20analyst",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        128,
+        -48
+      ],
+      "id": "98c47a18-b857-402e-9185-9ed2f3344e35",
+      "name": "Buscar ofertas (Remotive API)"
+    },
+    {
+      "parameters": {
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "url",
+              "field2": "Job URL"
+            }
+          ]
+        },
+        "resolve": "preferInput2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.compareDatasets",
+      "typeVersion": 2.3,
+      "position": [
+        480,
+        -64
+      ],
+      "id": "3efbc6d6-14dc-4bd6-878b-89e2546fb766",
+      "name": "Compare Datasets"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "3f15661d-b3e5-80d6-a14f-000b9f35d77c",
+          "mode": "list",
+          "cachedResultName": "Work Application Tracker",
+          "cachedResultUrl": "https://app.notion.com/p/3f15661db3e580b9beb7ce9a8a47e4a5"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        240,
+        144
+      ],
+      "id": "bf82c33b-2c04-47c2-8f7c-461adf0cce2d",
+      "name": "Notion: leer ofertas ya procesadas.",
+      "alwaysOutputData": true,
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "5M4Cn04IvQNHiYAz",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "254fcfbe-8f37-482e-8570-3be5c4ce375c",
+              "leftValue": "={{ $json.score }}",
+              "rightValue": 50,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1584,
+        -64
+      ],
+      "id": "a4bbb0aa-7acf-4f4d-8c13-746886aa00a9",
+      "name": "Decisión: ¿cumple 50% de los requisitos?"
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        736,
+        -64
+      ],
+      "id": "df97c52f-3183-48bf-b74f-83f7ca095c73",
+      "name": "Limitar ofertas por corrida"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.8-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.8-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Actuás como mi asesor de búsqueda laboral. Mi perfil: Analista de Datos y Técnico en Programación, stack Python/SQL/Power BI/Excel/Tableau, certificaciones IBM Data Science y Data Analytics, inglés B1-B2, busco roles de análisis de datos, BI o administrativos. Evaluá la oferta y devolvé SOLO un JSON válido, sin texto extra: {\"score\": 0-100, \"motivo\": \"una frase breve\"} — y debajo, con variables dinámicas: Oferta: {{ $json.title }} / Empresa: {{ $json.company_name }} / Descripción: {{ $json.description }}."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxOutputTokens": 300
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1104,
+        -64
+      ],
+      "id": "a94ca678-a721-4a58-abe4-97d7ceb69091",
+      "name": "Nodo IA: Score de Fit (Gemini).",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "maxTries": 2,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "mi3GRbTTpo7aRPgG",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const jobs = $('Limitar ofertas por corrida').all();\nconst ai = $input.all();\nreturn ai.map((item, i) => {\n  const texto = item.json.content?.parts?.[0]?.text\n    ?? item.json.candidates?.[0]?.content?.parts?.[0]?.text\n    ?? item.json.text ?? '';\n  let score = 0, motivo = 'sin respuesta válida';\n  try {\n    if (item.json.error) { motivo = 'error de API: ' + item.json.error; }\n    const parsed = JSON.parse(texto.replace(/```json|```/g, '').trim());\n    score = Number(parsed.score);\n    motivo = parsed.motivo;\n  } catch (e) {}\n  const j = jobs[i].json;\n  return { json: { title: j.title, company_name: j.company_name, url: j.url, score, motivo } };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        -64
+      ],
+      "id": "cf4ef434-e3bd-4555-9e44-519b93c2777f",
+      "name": "Code: Interpretar respuesta IA."
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        -64
+      ],
+      "id": "452dd785-5052-4764-9154-9274b6d5e14b",
+      "name": "Esperar entre ofertas",
+      "webhookId": "62c5fa96-b170-45c7-b0cc-0ec275702c7c"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "3f15661d-b3e5-80d6-a14f-000b9f35d77c",
+          "mode": "list",
+          "cachedResultName": "Work Application Tracker",
+          "cachedResultUrl": "https://app.notion.com/p/3f15661db3e580b9beb7ce9a8a47e4a5"
+        },
+        "title": "={{ $('Code: Interpretar respuesta IA.').item.json.title }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Job URL |url",
+              "urlValue": "={{ $('Code: Interpretar respuesta IA.').item.json.url }}"
+            },
+            {
+              "key": "Empresa|relation",
+              "relationValue": "={{ $json.id }}"
+            },
+            {
+              "key": "Fecha detectada|date",
+              "date": "={{ $now }}"
+            },
+            {
+              "key": "Score|number",
+              "numberValue": "={{ $('Code: Interpretar respuesta IA.').item.json.score }}"
+            },
+            {
+              "key": "Status|status",
+              "statusValue": "Nuevo match"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        2704,
+        -160
+      ],
+      "id": "0508f8ce-5a86-4fac-86b6-29d15f0475a0",
+      "name": "Notion: Registrar oferta",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "5M4Cn04IvQNHiYAz",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        -160
+      ],
+      "id": "418b68a7-8729-4c72-81c0-1d6e5d4999ed",
+      "name": "Agrupar ofertas del dia"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ofertas = $('Code: Interpretar respuesta IA.').all()\n  .map(i => i.json)\n  .filter(o => o.score >= 50);\n\nconst count = ofertas.length;\nconst items = ofertas.map(o =>\n  `<li><b>${o.title}</b> — ${o.company_name} (Score: ${o.score}/100)<br>${o.motivo}<br><a href=\"${o.url}\">Ver oferta</a> — Fuente: Remotive</li>`\n).join('');\n\nconst htmlBody = `<h3>Ofertas de hoy (${count})</h3><ul>${items}</ul><p>Fuente: Remotive</p>`;\n\nreturn [{ json: { htmlBody, count } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3152,
+        -160
+      ],
+      "id": "cf93dab5-304a-4779-abec-7f63023cb659",
+      "name": "Armar mail del dia"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "730561d9-16c4-4a27-9eec-9a0750142f6e",
+              "leftValue": "={{ $json.count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3376,
+        -160
+      ],
+      "id": "9cdad83f-29d4-4e4d-9caf-31e838758554",
+      "name": "Hay ofertas hoy"
+    },
+    {
+      "parameters": {
+        "sendTo": "REEMPLAZAR_TU_CORREO@ejemplo.com",
+        "subject": "=Ofertas de hoy ({{ $json.count }})",
+        "message": "={{ $json.htmlBody }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3600,
+        -256
+      ],
+      "id": "82a50bbe-be20-41b4-8db1-4ce1cb267b6f",
+      "name": "Gmail: Enviar resumen diario",
+      "webhookId": "10a5a489-3b45-408a-88d3-746beeb804ee",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "4ifKuLEQanVJfmnK",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 12
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -64,
+        -48
+      ],
+      "id": "90bb5207-e474-439d-8fcc-6fa94715e834",
+      "name": "Trigger: Revisión diaria mediodia"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "Empresas"
+        },
+        "limit": 1,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Nombre|title",
+              "condition": "equals",
+              "titleValue": "={{ $('Code: Interpretar respuesta IA.').item.json.company_name }}"
+            }
+          ]
+        },
+        "simple": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        1808,
+        -160
+      ],
+      "id": "aee3c1ed-cc1b-4bee-90a4-0cf158010f0c",
+      "name": "Notion: buscar empresa",
+      "alwaysOutputData": true,
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "5M4Cn04IvQNHiYAz",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fabd6bf3-243b-466a-b95e-db61ccf62889",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2032,
+        -160
+      ],
+      "id": "478c97c6-fc6f-4053-bd9a-82082539e5c5",
+      "name": "IF: ¿existe la empresa?"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "Empresas"
+        },
+        "title": "={{ $('Code: Interpretar respuesta IA.').item.json.company_name }}",
+        "propertiesUi": {
+          "propertyValues": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        2256,
+        -16
+      ],
+      "id": "d5cf0369-dc92-4575-bfb6-051cfcf01fb7",
+      "name": "Notion: crear empresa",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "5M4Cn04IvQNHiYAz",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2480,
+        -160
+      ],
+      "id": "016cc39a-aa9e-47d2-974e-bf7ea478a38f",
+      "name": "Merge: unir empresa"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "54ef772d-6d4b-4d56-8c41-407f5459cbf6",
+              "leftValue": "={{ $json.motivo }}",
+              "rightValue": "error de API",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1808,
+        96
+      ],
+      "id": "ec9715a6-9401-44cf-b0bb-c9030cfdac40",
+      "name": "IF: ¿fue error de API?"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "3f15661d-b3e5-80d6-a14f-000b9f35d77c",
+          "mode": "list",
+          "cachedResultName": "Work Application Tracker",
+          "cachedResultUrl": "https://app.notion.com/p/3f15661db3e580b9beb7ce9a8a47e4a5"
+        },
+        "title": "={{ $json.title }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Job URL |url",
+              "urlValue": "={{ $json.url }}"
+            },
+            {
+              "key": "Fecha detectada|date",
+              "date": "={{ $now }}"
+            },
+            {
+              "key": "Score|number",
+              "numberValue": "={{ $json.score }}"
+            },
+            {
+              "key": "Status|status",
+              "statusValue": "Rechazado"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        2032,
+        160
+      ],
+      "id": "980459d1-f3d9-4a03-bd99-b88e609cb373",
+      "name": "Notion: registrar oferta descartada",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "5M4Cn04IvQNHiYAz",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Buscar ofertas (Remotive API)": {
+      "main": [
+        [
+          {
+            "node": "Separar ofertar individuales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar ofertar individuales": {
+      "main": [
+        [
+          {
+            "node": "Compare Datasets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: leer ofertas ya procesadas.": {
+      "main": [
+        [
+          {
+            "node": "Compare Datasets",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Compare Datasets": {
+      "main": [
+        [
+          {
+            "node": "Limitar ofertas por corrida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limitar ofertas por corrida": {
+      "main": [
+        [
+          {
+            "node": "Esperar entre ofertas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nodo IA: Score de Fit (Gemini).": {
+      "main": [
+        [
+          {
+            "node": "Code: Interpretar respuesta IA.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Interpretar respuesta IA.": {
+      "main": [
+        [
+          {
+            "node": "Decisión: ¿cumple 50% de los requisitos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar entre ofertas": {
+      "main": [
+        [
+          {
+            "node": "Nodo IA: Score de Fit (Gemini).",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decisión: ¿cumple 50% de los requisitos?": {
+      "main": [
+        [
+          {
+            "node": "Notion: buscar empresa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF: ¿fue error de API?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: Registrar oferta": {
+      "main": [
+        [
+          {
+            "node": "Agrupar ofertas del dia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrupar ofertas del dia": {
+      "main": [
+        [
+          {
+            "node": "Armar mail del dia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar mail del dia": {
+      "main": [
+        [
+          {
+            "node": "Hay ofertas hoy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay ofertas hoy": {
+      "main": [
+        [
+          {
+            "node": "Gmail: Enviar resumen diario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger: Revisión diaria mediodia": {
+      "main": [
+        [
+          {
+            "node": "Buscar ofertas (Remotive API)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notion: leer ofertas ya procesadas.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: buscar empresa": {
+      "main": [
+        [
+          {
+            "node": "IF: ¿existe la empresa?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: ¿existe la empresa?": {
+      "main": [
+        [
+          {
+            "node": "Merge: unir empresa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notion: crear empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: crear empresa": {
+      "main": [
+        [
+          {
+            "node": "Merge: unir empresa",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: unir empresa": {
+      "main": [
+        [
+          {
+            "node": "Notion: Registrar oferta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: ¿fue error de API?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Notion: registrar oferta descartada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "045b12c5-0809-4f6b-b913-d24be02da46f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a6c886bc47a99f0c756260ff0f156ca713506fb8f403365077dd2745cfc80e73"
+  },
+  "nodeGroups": [],
+  "id": "YXq86GFB4m6G7wco",
+  "tags": []
+}
