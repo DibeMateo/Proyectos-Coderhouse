@@ -127,3 +127,37 @@ La página http://127.0.0.1:8000/posts/ muestra dinámicamente los posts con est
 - Para subir archivos, el `<form>` necesita `method="post"` y `enctype="multipart/form-data"`, y la vista tiene que pasar `request.FILES` al formulario: `PostForm(request.POST, request.FILES)`.
 - Las imágenes se guardan en `media/posts/` y en la base solo se guarda la ruta. En los templates se muestran con `{{ post.imagen.url }}`.
 - Para que un post nuevo aparezca en la lista, su estado debe ser "Publicado".
+
+## Usuarios, autenticación y perfil
+
+La app `usuarios` usa el sistema de autenticación de Django (`django.contrib.auth`).
+
+| Ruta | Vista | Requiere login |
+|---|---|---|
+| `/usuarios/registro/` | `registro` | No |
+| `/usuarios/login/` | `LoginView` | No |
+| `/usuarios/logout/` | `LogoutView` (solo POST) | Sí |
+| `/usuarios/perfil/` | `perfil` | Sí |
+| `/usuarios/perfil/editar/` | `editar_perfil` | Sí |
+| `/posts/nuevo/` | `crear_post` | Sí |
+| `/posts/<id>/editar/` | `editar_post` | Sí |
+| `/posts/<id>/eliminar/` | `eliminar_post` | Sí |
+| `/posts/` y `/posts/<id>/` | listado y detalle | No (públicos) |
+
+### Registro
+`RegistroForm` extiende `UserCreationForm` y agrega el campo `email`. Al guardar el usuario, la vista crea su perfil con `Perfil.objects.create(user=usuario)` y lo deja logueado.
+
+### Iniciar sesión
+Desde `/usuarios/login/`. Si se intenta entrar a una ruta protegida sin estar logueado, Django redirige al login (`LOGIN_URL = 'login'`) y, al autenticarse, vuelve a la página pedida.
+
+### Cerrar sesión
+Desde el botón "Cerrar sesión" del menú. Es un formulario con `POST` y `{% csrf_token %}`, porque `LogoutView` no acepta `GET`.
+
+### Modelo `Perfil`
+Está en `usuarios/models.py` y se relaciona con `User` mediante `OneToOneField` (`related_name='perfil'`). Campos: `biografia` (TextField), `link_web` (URLField opcional) y `avatar` (ImageField opcional). Está registrado en el admin.
+
+### Avatares
+Se suben a `media/avatares/`. Para que se vean están configurados `MEDIA_URL = '/media/'` y `MEDIA_ROOT = BASE_DIR / 'media'`, y en `urls.py` se sirve `media` con `static()` cuando `DEBUG = True`. El formulario de edición usa `enctype="multipart/form-data"` y la vista pasa `request.FILES` a `PerfilForm`.
+
+### Vistas protegidas
+Crear, editar y eliminar posts usan `@login_required`. El listado y el detalle siguen siendo públicos. El menú cambia según el usuario esté autenticado o no.

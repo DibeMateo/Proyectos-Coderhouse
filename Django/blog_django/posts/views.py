@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 
 from .forms import PostForm
@@ -22,15 +23,15 @@ def detalle_post(request, pk):
     return render(request, 'posts/detalle_post.html', {'post': post})
 
 
+@login_required
 def crear_post(request):
     if request.method == 'POST':
-        # request.FILES es lo que lleva la imagen subida
         form = PostForm(request.POST, request.FILES)
         if form.is_valid():
             post = form.save()
             return redirect('detalle_post', pk=post.pk)
     else:
-        form = PostForm()
+        form = PostForm(initial={'autor': request.user.username})
     return render(request, 'posts/post_form.html', {
         'form': form,
         'titulo_pagina': 'Nuevo post',
@@ -38,6 +39,7 @@ def crear_post(request):
     })
 
 
+@login_required
 def editar_post(request, pk):
     post = get_object_or_404(Post, pk=pk)
     if request.method == 'POST':
@@ -55,6 +57,7 @@ def editar_post(request, pk):
     })
 
 
+@login_required
 def eliminar_post(request, pk):
     post = get_object_or_404(Post, pk=pk)
     if request.method == 'POST':

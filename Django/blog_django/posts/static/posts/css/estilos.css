@@ -98,3 +98,23 @@ body {
 .formulario input[type="text"],
 .formulario textarea,
 .formulario select { width: 100%; max-width: 500px; padding: 6px; }
+
+/* ---------- Usuarios: menú y avatar ---------- */
+.navbar form { display: inline; margin: 0; }
+.navbar .btn-link {
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+}
+.navbar .btn-link:hover { text-decoration: underline; }
+
+.perfil-avatar {
+    width: 140px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin: 10px 0;
+}

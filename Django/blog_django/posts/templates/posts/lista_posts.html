@@ -4,7 +4,10 @@
 
 {% block content %}
     <h1>Publicaciones</h1>
-    <p><a class="boton" href="{% url 'crear_post' %}">+ Nuevo post</a></p>
+
+    {% if user.is_authenticated %}
+        <p><a class="boton" href="{% url 'crear_post' %}">+ Nuevo post</a></p>
+    {% endif %}
 
     {% for post in posts %}
         <article class="post">

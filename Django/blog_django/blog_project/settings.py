@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 	"posts.apps.PostsConfig",
+    "usuarios.apps.UsuariosConfig",
 ]
 
 MIDDLEWARE = [
@@ -130,3 +131,8 @@ MAILERS = {
 # ---------- Archivos media (imágenes subidas por los usuarios) ----------
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# ---------- Autenticación ----------
+LOGIN_URL = 'login'            # a dónde manda @login_required si no estás logueado
+LOGIN_REDIRECT_URL = 'inicio'  # a dónde va después de loguearse
+LOGOUT_REDIRECT_URL = 'inicio' # a dónde va después de cerrar sesión

@@ -1,0 +1,19 @@
+{% extends 'posts/base.html' %}
+
+{% block title %}Editar perfil{% endblock %}
+
+{% block content %}
+    <h1>Editar perfil</h1>
+
+    {% if perfil.avatar %}
+        <p>Avatar actual:</p>
+        <img class="perfil-avatar" src="{{ perfil.avatar.url }}" alt="Avatar de {{ user.username }}">
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="formulario">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="boton">Guardar cambios</button>
+        <a class="boton boton-secundario" href="{% url 'perfil' %}">Cancelar</a>
+    </form>
+{% endblock %}
